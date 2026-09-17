@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>CrisisMesh WebSocket Test</title>
+</head>
+
+<body>
+
+<h2>CrisisMesh WebSocket Test</h2>
+
+<button onclick="connectA()">Connect A</button>
+<button onclick="connectB()">Connect B</button>
+<button onclick="connectC()">Connect C</button>
+<button onclick="connectD()">Connect D</button>
+
+<br><br>
+
+<input
+        id="message"
+        type="text"
+        placeholder="Enter emergency message"
+/>
+<button onclick="sendPriorityMessage(1)">
+    Send Priority 1
+</button>
+
+<button onclick="sendPriorityMessage(5)">
+    Send Priority 5
+</button>
+
+<button onclick="sendPriorityMessage(10)">
+    Send Priority 10 🚨
+</button>
+<button onclick="sendMessage()">
+    Send A → D
+</button>
+
+<br><br>
+
+<pre id="output"></pre>
+
+<script>
+
+    let socketA;
+    let socketB;
+    let socketC;
+    let socketD;
+
+    const output =
+        document.getElementById("output");
+
+    function log(message) {
+        output.textContent +=
+            message + "\n";
+    }
+
+    function sendPriorityMessage(priority) {
+
+        if (!socketA ||
+            socketA.readyState !== WebSocket.OPEN) {
+
+            log("❌ Node A is not connected");
+            return;
+        }
+
+        const message = {
+
+            messageId:
+                "msg-" + Date.now(),
+
+            source: "A",
+
+            target: "D",
+
+            content:
+                "Emergency message - Priority " + priority,
+
+            priority: priority
+        };
+
+        socketA.send(
+            JSON.stringify(message)
+        );
+
+        log(
+            "📤 Sent Priority "
+            + priority
+        );
+    }
+    function connectA() {
+
+        socketA = new WebSocket(
+            "ws://localhost:8080/ws?node=A"
+        );
+
+        socketA.onopen = function () {
+            log("🟢 Node A connected");
+        };
+
+        socketA.onmessage = function (event) {
+
+            const message = JSON.parse(event.data);
+
+            if (message.acknowledgement) {
+                log("✅ ACK RECEIVED AT A: " + message.content);
+            } else {
+                log("A received: " + event.data);
+            }
+        };
+
+        socketA.onclose = function () {
+            log("🔴 Node A disconnected");
+        };
+    }
+
+
+    function connectB() {
+
+        socketB = new WebSocket(
+            "ws://localhost:8080/ws?node=B"
+        );
+
+        socketB.onopen = function () {
+            log("🟢 Node B connected");
+        };
+
+        socketB.onmessage = function (event) {
+            log("B received: " + event.data);
+        };
+
+        socketB.onclose = function () {
+            log("🔴 Node B disconnected");
+        };
+    }
+
+
+    function connectC() {
+
+        socketC = new WebSocket(
+            "ws://localhost:8080/ws?node=C"
+        );
+
+        socketC.onopen = function () {
+            log("🟢 Node C connected");
+        };
+
+        socketC.onmessage = function (event) {
+            log("C received: " + event.data);
+        };
+
+        socketC.onclose = function () {
+            log("🔴 Node C disconnected");
+        };
+    }
+
+
+    function connectD() {
+
+        socketD = new WebSocket(
+            "ws://localhost:8080/ws?node=D"
+        );
+
+        socketD.onopen = function () {
+            log("🟢 Node D connected");
+        };
+
+        socketD.onmessage = function (event) {
+
+            log(
+                "🚨 D RECEIVED: "
+                + event.data
+            );
+        };
+
+        socketD.onclose = function () {
+            log("🔴 Node D disconnected");
+        };
+    }
+
+
+    function sendMessage() {
+
+        if (!socketA ||
+            socketA.readyState !== WebSocket.OPEN) {
+
+            log("❌ Node A is not connected");
+
+            return;
+        }
+
+        const content =
+            document.getElementById(
+                "message"
+            ).value;
+
+        const message = {
+
+            messageId:
+                "msg-" + Date.now(),
+
+            source: "A",
+
+            target: "D",
+
+            content: content,
+
+            priority: 10
+        };
+
+        socketA.send(
+            JSON.stringify(message)
+        );
+
+        log(
+            "📤 A SENT: "
+            + JSON.stringify(message)
+        );
+    }
+
+</script>
+
+</body>
+
+</html>
